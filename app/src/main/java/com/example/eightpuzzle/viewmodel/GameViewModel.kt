@@ -18,6 +18,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private fun movesKey() = "best_moves_$gridSize"
     private fun timeKey() = "best_time_$gridSize"
 
+    private fun gamesPlayedKey() = "games_played_$gridSize"
+    private fun gamesWonKey() = "games_won_$gridSize"
+    private fun totalMovesKey() = "total_moves_$gridSize"
+    private fun totalTimeKey() = "total_time_$gridSize"
+
     private var gridSize = 3
 
     /* SharedPreferences */
@@ -48,12 +53,32 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     var bestTime by mutableStateOf(loadBestTime())
         private set
 
+    var achievedNewBestMoves by mutableStateOf(false)
+        private set
+
+    var achievedNewBestTime by mutableStateOf(false)
+        private set
+
+    /* ---------------- STATISTICS ---------------- */
+
+    var gamesPlayed by mutableStateOf(loadGamesPlayed())
+        private set
+
+    var gamesWon by mutableStateOf(loadGamesWon())
+        private set
+
+    var totalMoves by mutableStateOf(loadTotalMoves())
+        private set
+
+    var totalTime by mutableStateOf(loadTotalTime())
+        private set
 
     /* ---------------- INTERNAL ---------------- */
 
     private var timerJob: Job? = null
     private var timerStarted = false
     private var isProcessingMove = false
+    private var gameStarted = false
 
     private lateinit var solvedState: IntArray
 
@@ -97,9 +122,19 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         bestMoves = loadBestMoves()
         bestTime = loadBestTime()
 
-        isSolved = false
-        shufflePuzzle()
+        gamesPlayed = loadGamesPlayed()
+        gamesWon = loadGamesWon()
+        totalMoves = loadTotalMoves()
+        totalTime = loadTotalTime()
 
+
+        // Reset flags every new game
+        achievedNewBestMoves = false
+        achievedNewBestTime = false
+
+        isSolved = false
+
+        shufflePuzzle()
     }
 
 
@@ -128,7 +163,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         timerStarted = false
         isProcessingMove = false
-
+        gameStarted = false
         stopTimer()
         if (gridSize == 3) {
             calculateOptimal()
@@ -151,7 +186,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             startTimer()
             timerStarted = true
         }
+        if (!gameStarted) {
 
+            gameStarted = true
+
+            gamesPlayed++
+
+            prefs.edit()
+                .putInt(gamesPlayedKey(), gamesPlayed)
+                .apply()
+        }
         /* Swap */
         tiles.swap(index, emptyIndex)
 
@@ -230,6 +274,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         saveBestScore()
 
+        gamesWon++
+        totalMoves += moves
+        totalTime += seconds
+
+        prefs.edit()
+            .putInt(gamesWonKey(), gamesWon)
+            .putInt(totalMovesKey(), totalMoves)
+            .putInt(totalTimeKey(), totalTime)
+            .apply()
+
         viewModelScope.launch {
             delay(120)
             isSolved = true
@@ -254,12 +308,22 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         val editor = prefs.edit()
 
+        // Reset flags every game
+        achievedNewBestMoves = false
+        achievedNewBestTime = false
+
+        // Best Moves
         if (bestMoves == 0 || moves < bestMoves) {
+
+            achievedNewBestMoves = true
             bestMoves = moves
             editor.putInt(movesKey(), moves)
         }
 
+        // Best Time
         if (bestTime == 0 || seconds < bestTime) {
+
+            achievedNewBestTime = true
             bestTime = seconds
             editor.putInt(timeKey(), seconds)
         }
@@ -277,6 +341,21 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         return prefs.getInt(timeKey(), 0)
     }
 
+    private fun loadGamesPlayed(): Int {
+        return prefs.getInt(gamesPlayedKey(), 0)
+    }
+
+    private fun loadGamesWon(): Int {
+        return prefs.getInt(gamesWonKey(), 0)
+    }
+
+    private fun loadTotalMoves(): Int {
+        return prefs.getInt(totalMovesKey(), 0)
+    }
+
+    private fun loadTotalTime(): Int {
+        return prefs.getInt(totalTimeKey(), 0)
+    }
 
     /* ---------------- TIMER CONTROL ---------------- */
 
@@ -291,7 +370,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             startTimer()
         }
     }
+    /* ---------------- CALCULATED STATISTICS ---------------- */
 
+    val averageMoves: Int
+        get() = if (gamesWon == 0) 0 else totalMoves / gamesWon
+
+    val averageTime: Int
+        get() = if (gamesWon == 0) 0 else totalTime / gamesWon
+
+    val winRate: Float
+        get() =
+            if (gamesPlayed == 0) 0f
+            else (gamesWon * 100f) / gamesPlayed
 
     /* ---------------- UTILITY ---------------- */
 
@@ -302,7 +392,63 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         this[i] = this[j]
         this[j] = temp
     }
+    fun getStatistics(size: Int): PuzzleStatistics {
 
+        val played = prefs.getInt("games_played_$size", 0)
+        val won = prefs.getInt("games_won_$size", 0)
+
+        val totalMoves = prefs.getInt("total_moves_$size", 0)
+        val totalTime = prefs.getInt("total_time_$size", 0)
+
+        val bestMoves = prefs.getInt("best_moves_$size", 0)
+        val bestTime = prefs.getInt("best_time_$size", 0)
+
+        return PuzzleStatistics(
+            gridSize = size,
+            gamesPlayed = played,
+            gamesWon = won,
+            bestMoves = bestMoves,
+            bestTime = bestTime,
+            averageMoves =
+                if (won == 0) 0
+                else totalMoves / won,
+            averageTime =
+                if (won == 0) 0
+                else totalTime / won,
+            winRate =
+                if (played == 0) 0f
+                else (won * 100f) / played
+        )
+    }
+    /**
+     * Permanently clears all recorded statistics for a single grid size
+     * (best moves, best time, games played, games won, total moves, and
+     * total time). Does not affect other grid sizes.
+     *
+     * If [size] matches the grid size of the currently active game session,
+     * the in-memory best-score/statistics state is also refreshed so the
+     * active session immediately reflects the reset.
+     */
+    fun resetStatistics(size: Int) {
+
+        prefs.edit()
+            .remove("best_moves_$size")
+            .remove("best_time_$size")
+            .remove("games_played_$size")
+            .remove("games_won_$size")
+            .remove("total_moves_$size")
+            .remove("total_time_$size")
+            .apply()
+
+        if (size == gridSize) {
+            bestMoves = loadBestMoves()
+            bestTime = loadBestTime()
+            gamesPlayed = loadGamesPlayed()
+            gamesWon = loadGamesWon()
+            totalMoves = loadTotalMoves()
+            totalTime = loadTotalTime()
+        }
+    }
     private fun calculateOptimal() {
 
         val startState = tiles.toList()

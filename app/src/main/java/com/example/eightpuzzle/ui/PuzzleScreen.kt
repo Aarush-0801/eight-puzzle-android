@@ -32,6 +32,12 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 
 
 /* ---------------- TIME FORMAT ---------------- */
@@ -52,8 +58,11 @@ fun PuzzleScreen(
     onBack: () -> Unit,
     viewModel: GameViewModel   // ✅ Pass from MainActivity
 ) {
+    val haptic = LocalHapticFeedback.current
+
     // Handle phone back button
     BackHandler {
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         onBack()
     }
 
@@ -61,6 +70,15 @@ fun PuzzleScreen(
     val tiles by remember { derivedStateOf { viewModel.tiles } }
     val isDark = isSystemInDarkTheme()
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
+    var showReference by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showReference) {
+        if (showReference) {
+            delay(2000)
+            showReference = false
+        }
+    }
 
     DisposableEffect(lifecycleOwner) {
 
@@ -159,7 +177,12 @@ fun PuzzleScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             IconButton(
-                                onClick = { onBack() },
+                                onClick = {
+
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+
+                                    onBack()
+                                },
                                 modifier = Modifier.size(36.dp)
                             ) {
                                 Icon(
@@ -184,7 +207,7 @@ fun PuzzleScreen(
 
                         // CENTER: Title
                         Text(
-                            text = "8 PUZZLE",
+                            text = "${gridSize} × ${gridSize}",
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f),
@@ -193,14 +216,36 @@ fun PuzzleScreen(
 
 
                         // RIGHT: Timer
+                        // RIGHT: Goal + Timer
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.weight(1f),
                             horizontalArrangement = Arrangement.End
                         ) {
-                            Icon(Icons.Default.Timer, null)
 
-                            Spacer(Modifier.width(4.dp))
+                            IconButton(
+                                onClick = {
+
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+
+                                    showReference = true
+                                },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Visibility,
+                                    contentDescription = "Goal Preview"
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
+                            Icon(
+                                imageVector = Icons.Default.Timer,
+                                contentDescription = null
+                            )
+
+                            Spacer(modifier = Modifier.width(4.dp))
 
                             Text(
                                 text = formatTime(viewModel.seconds),
@@ -391,6 +436,7 @@ fun PuzzleScreen(
                                 interactionSource = buttonInteraction,
                                 indication = null,
                             ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.startGame(gridSize)
                             },
                         contentAlignment = Alignment.Center
@@ -412,13 +458,19 @@ fun PuzzleScreen(
 
             /* ---------- FOOTER ---------- */
 
-            Text(
-                "Developed by Aarush Bhardwaj",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
+//            Text(
+//                "Developed by Aarush Bhardwaj",
+//                style = MaterialTheme.typography.bodySmall,
+//                color = Color.Gray
+//            )
         }
-
+        GoalPreview(
+            visible = showReference,
+            gridSize = gridSize,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 175.dp)
+        )
 
         /* ================= WIN SCREEN ================= */
 
@@ -429,9 +481,11 @@ fun PuzzleScreen(
 
                 if (viewModel.isSolved) {
 
-                    showConfetti = true      // Start confetti
-                    delay(6000)              // Run for 6 sec
-                    showConfetti = false     // Stop confetti
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+
+                    showConfetti = true
+                    delay(6000)
+                    showConfetti = false
                 }
             }
 
@@ -453,10 +507,10 @@ fun PuzzleScreen(
                 label = "scale"
             )
 
-            val alpha by animateFloatAsState(
-                if (startAnim) 1f else 0f,
-                tween(300),
-                label = "alpha"
+            val dialogAlpha by animateFloatAsState(
+                targetValue = if (startAnim) 1f else 0f,
+                animationSpec = tween(300),
+                label = "dialog_alpha"
             )
 
             val offset by animateFloatAsState(
@@ -485,84 +539,263 @@ fun PuzzleScreen(
                     contentAlignment = Alignment.Center
                 ) {
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                    val badge: String
+                    val message: String
+
+                    if (gridSize == 3 && viewModel.optimalMoves > 0) {
+
+                        val diff = viewModel.moves - viewModel.optimalMoves
+
+                        when {
+                            diff <= 0 -> {
+                                badge = "Puzzle Genius"
+                                message = "Incredible! You solved it optimally!"
+                            }
+
+                            diff <= 5 -> {
+                                badge = "Master Solver"
+                                message = "Outstanding performance!"
+                            }
+
+                            diff <= 10 -> {
+                                badge = "Excellent"
+                                message = "Excellent solving skills!"
+                            }
+
+                            diff <= 20 -> {
+                                badge = "Great Job"
+                                message = "Great work! Keep improving!"
+                            }
+
+                            else -> {
+                                badge = "Nice Try"
+                                message = "Nice attempt! Try beating your best score!"
+                            }
+                        }
+
+                    } else {
+
+                        when {
+
+                            viewModel.bestMoves == 0 ||
+                                    viewModel.moves <= viewModel.bestMoves -> {
+
+                                badge = "Puzzle Genius"
+                                message = "Outstanding performance!"
+                            }
+
+                            viewModel.moves <= viewModel.bestMoves + 10 -> {
+
+                                badge = "Master Solver"
+                                message = "Excellent solving skills!"
+                            }
+
+                            viewModel.moves <= viewModel.bestMoves + 20 -> {
+
+                                badge = "Excellent"
+                                message = "Great work! Keep improving!"
+                            }
+
+                            viewModel.moves <= viewModel.bestMoves + 35 -> {
+                                badge = "Great Job"
+                                message = "Nice attempt! Keep practicing!"
+                            }
+
+                            else -> {
+                                badge = "Nice Try"
+                                message = "Try beating your best score!"
+                            }
+                        }
+                    }
+
+                    Card(
                         modifier = Modifier
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
                                 translationY = offset
-                                this.alpha = alpha
+                                alpha = dialogAlpha
                             }
-                            .background(
-                                Color.White,
-                                RoundedCornerShape(24.dp)
-                            )
-                            .padding(28.dp)
-                            .width(260.dp)
+                            .widthIn(max = 360.dp)
+                            .fillMaxWidth(0.9f),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 14.dp)
                     ) {
 
-                        /* Trophy */
-                        Icon(
-                            imageVector = Icons.Default.EmojiEvents,
-                            contentDescription = null,
-                            tint = Color(0xFFFFC107),
-                            modifier = Modifier.size(48.dp)
-                        )
-
-                        Spacer(Modifier.height(8.dp))
-
-                        Text(
-                            "You Won!",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(Modifier.height(16.dp))
-
-
-                        /* Stats Card */
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFF5F7FA)
-                            ),
-                            modifier = Modifier.fillMaxWidth()
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(24.dp)
                         ) {
 
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = null,
+                                tint = Color(0xFFFFC107),
+                                modifier = Modifier.size(80.dp)
+                            )
+
+                            Spacer(Modifier.height(16.dp))
+
+                            Text(
+                                text = "Congratulations!",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = RoundedCornerShape(18.dp),
+                                tonalElevation = 4.dp,
+                                shadowElevation = 4.dp
                             ) {
 
-                                StatRow("Moves", viewModel.moves.toString())
-
-                                StatRow("Time", formatTime(viewModel.seconds))
-
-                                if (
-                                    viewModel.moves == viewModel.bestMoves ||
-                                    viewModel.seconds == viewModel.bestTime
+                                Row(
+                                    modifier = Modifier.padding(
+                                        horizontal = 24.dp,
+                                        vertical = 12.dp
+                                    ),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
                                 ) {
+
+                                    Icon(
+                                        imageVector = Icons.Default.EmojiEvents,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFFC107),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.width(10.dp))
+
                                     Text(
-                                        "🏆 New Best!",
-                                        color = Color(0xFFFF9800),
+                                        text = badge,
+                                        style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                 }
                             }
-                        }
 
-                        Spacer(Modifier.height(20.dp))
+                            Spacer(Modifier.height(16.dp))
 
+                            Text(
+                                text = message,
+                                modifier = Modifier.fillMaxWidth(0.9f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
 
-                        /* Play Again Button */
-                        Button(
-                            onClick = { viewModel.startGame(gridSize) },
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Play Again", fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(20.dp))
+
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                                shape = RoundedCornerShape(18.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+
+                                Column(
+                                    modifier = Modifier.padding(18.dp)
+                                ) {
+
+                                    PremiumStatRow(
+                                        icon = Icons.Default.DirectionsWalk,
+                                        title = "Total Moves",
+                                        value = viewModel.moves.toString()
+                                    )
+
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)
+                                    )
+
+                                    PremiumStatRow(
+                                        icon = Icons.Default.Timer,
+                                        title = "Time Taken",
+                                        value = formatTime(viewModel.seconds)
+                                    )
+
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)
+                                    )
+
+                                    PremiumStatRow(
+                                        icon = Icons.Default.EmojiEvents,
+                                        title = "Best Moves",
+                                        value = if (viewModel.bestMoves == 0) "--"
+                                        else viewModel.bestMoves.toString(),
+                                        highlight = viewModel.achievedNewBestMoves
+                                    )
+
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)
+                                    )
+
+                                    PremiumStatRow(
+                                        icon = Icons.Default.Timer,
+                                        title = "Best Time",
+                                        value = if (viewModel.bestTime == 0) "--"
+                                        else formatTime(viewModel.bestTime),
+                                        highlight = viewModel.achievedNewBestTime
+                                    )
+
+                                    if (gridSize == 3) {
+
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(vertical = 8.dp),
+                                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f)
+                                        )
+
+                                        PremiumStatRow(
+                                            icon = Icons.Default.TrackChanges,
+                                            title = "Optimal",
+                                            value = viewModel.optimalMoves.toString()
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(24.dp))
+
+                            Button(
+                                onClick = {
+
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+
+                                    viewModel.startGame(gridSize)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = 6.dp
+                                )
+                            ) {
+
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    contentDescription = null
+                                )
+
+                                Spacer(Modifier.width(8.dp))
+
+                                Text(
+                                    text = "Play Again",
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
                         }
                     }
 
@@ -573,24 +806,63 @@ fun PuzzleScreen(
 }
 
 @Composable
-private fun StatRow(label: String, value: String) {
+private fun PremiumStatRow(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    highlight: Boolean = false
+) {
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        Text(
-            label,
-            color = Color.Gray,
-            fontWeight = FontWeight.Medium
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
         )
 
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            if (highlight) {
+
+                Surface(
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+
+                    Text(
+                        text = "NEW RECORD!",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(
+                            horizontal = 10.dp,
+                            vertical = 4.dp
+                        )
+                    )
+                }
+            }
+        }
+
         Text(
-            value,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
