@@ -1,44 +1,102 @@
-# 8 Puzzle – Android Sliding Puzzle Game
+# 🧩 Eight Puzzle
 
-## Project Overview
-8 Puzzle is a classic sliding puzzle game developed for Android using Kotlin and Jetpack Compose. The objective of the game is to arrange the numbered tiles in ascending order by sliding them into the empty space within a 3×3 grid.
-
-Players must strategically move the tiles to solve the puzzle in the minimum number of moves and shortest time possible.
+A modern Android sliding puzzle game built with **Kotlin**, **Jetpack Compose**, and **Material 3**.
 
 ---
 
-## Technologies Used
+# 📱 Screenshots
+
+## Home Screen
+
+<p align="center">
+  <img src="screenshots/home.jpg" alt="Home Screen" width="300">
+</p>
+
+---
+
+## Gameplay
+
+<p align="center">
+  <img src="screenshots/gameplay-3x3.jpg" alt="3x3 Gameplay" width="280">
+  <img src="screenshots/gameplay-4x4.jpg" alt="4x4 Gameplay" width="280">
+</p>
+
+---
+
+## Statistics
+
+<p align="center">
+  <img src="screenshots/statistics-4x4.jpg" alt="Statistics Screen" width="300">
+</p>
+
+---
+
+## Win Screen
+
+<p align="center">
+  <img src="screenshots/win.jpg" alt="Victory Screen" width="300">
+</p>
+
+---
+
+# ✨ Features
+
+- 🎮 Classic sliding puzzle gameplay
+- 📐 Three puzzle sizes:
+    - 3×3
+    - 4×4
+    - 5×5
+- 🤖 A* Solver for the 3×3 puzzle
+- 📊 Best moves and best time tracking
+- 📈 Statistics for each puzzle size
+- 🌙 Light & Dark theme support
+- 📱 Works completely offline
+- 🚫 No advertisements
+
+---
+
+# 🧠 A* Solver
+
+The application includes an **A* Search Algorithm** that calculates the optimal solution for the classic **3×3 puzzle** using the Manhattan Distance heuristic.
+
+> **Note:** The A* Solver is available **only for the 3×3 mode**.
+
+---
+
+# 📊 Statistics
+
+The application tracks:
+
+- Games Played
+- Games Won
+- Win Rate
+- Best Moves
+- Best Time
+- Average Moves
+- Average Time
+
+Statistics are maintained separately for each puzzle size.
+
+---
+
+# 🛠 Tech Stack
+
 - Kotlin
 - Jetpack Compose
+- Material 3
+- MVVM Architecture
 - Android SDK
-- A* (A-Star) Search Algorithm
-- GitHub for version control
 
 ---
 
-## Key Features
-- Classic 3×3 sliding puzzle gameplay
-- Randomized but always solvable puzzle states
-- Move counter and timer to track performance
-- Best score tracking for moves and completion time
-- Optimal move calculation using A* algorithm
-- Smooth animations and responsive tile movement
-- Clean and modern user interface
-- Lightweight Android application
+# 👨‍💻 Developer
+
+**Aarush Bhardwaj**
+
+GitHub: https://github.com/Aarush-0801
 
 ---
 
-## Algorithm Used
-The application integrates the **A* (A-Star) search algorithm** to determine the optimal solution path for the puzzle. This algorithm is commonly used in artificial intelligence and pathfinding problems to find the most efficient sequence of moves required to solve the puzzle.
+<div align="center">
 
----
-
-## GitHub Repository
-Source Code:
-https://github.com/Aarush-0801/eight-puzzle-android
-
----
-
-## Application Download
-APK File:
-https://github.com/Aarush-0801/eight-puzzle-android/raw/master/app-debug.apk
+</div>
