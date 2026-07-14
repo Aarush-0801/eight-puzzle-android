@@ -1,4 +1,4 @@
-package com.example.eightpuzzle.ui
+package com.aarushbhardwaj.eightpuzzle.ui
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.eightpuzzle.viewmodel.GameViewModel
+import com.aarushbhardwaj.eightpuzzle.viewmodel.GameViewModel
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import kotlinx.coroutines.delay

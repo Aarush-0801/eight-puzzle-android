@@ -1,4 +1,4 @@
-package com.example.eightpuzzle
+package com.aarushbhardwaj.eightpuzzle
 
 import org.junit.Test
 

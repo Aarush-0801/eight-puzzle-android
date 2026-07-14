@@ -1,4 +1,4 @@
-package com.example.eightpuzzle
+package com.aarushbhardwaj.eightpuzzle
 
 import android.content.pm.ActivityInfo
 import android.os.Bundle
@@ -7,14 +7,14 @@ import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.eightpuzzle.ui.PuzzleScreen
-import com.example.eightpuzzle.ui.theme.EightPuzzleTheme
+import com.aarushbhardwaj.eightpuzzle.ui.PuzzleScreen
+import com.aarushbhardwaj.eightpuzzle.ui.theme.EightPuzzleTheme
 import androidx.compose.runtime.*
-import com.example.eightpuzzle.ui.HomeScreen
-import com.example.eightpuzzle.ui.StatisticsScreen
+import com.aarushbhardwaj.eightpuzzle.ui.HomeScreen
+import com.aarushbhardwaj.eightpuzzle.ui.StatisticsScreen
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.eightpuzzle.viewmodel.GameViewModel
+import com.aarushbhardwaj.eightpuzzle.viewmodel.GameViewModel
 
 
 class MainActivity : ComponentActivity() {

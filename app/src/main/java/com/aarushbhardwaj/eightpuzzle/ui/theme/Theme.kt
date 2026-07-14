@@ -1,4 +1,4 @@
-package com.example.eightpuzzle.ui.theme
+package com.aarushbhardwaj.eightpuzzle.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*

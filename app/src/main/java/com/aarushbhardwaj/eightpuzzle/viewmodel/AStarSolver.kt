@@ -1,4 +1,4 @@
-package com.example.eightpuzzle.viewmodel
+package com.aarushbhardwaj.eightpuzzle.viewmodel
 
 import java.util.PriorityQueue
 import kotlin.math.abs

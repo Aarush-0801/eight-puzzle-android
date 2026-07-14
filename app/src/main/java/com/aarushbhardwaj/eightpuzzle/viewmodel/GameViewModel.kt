@@ -1,4 +1,4 @@
-package com.example.eightpuzzle.viewmodel
+package com.aarushbhardwaj.eightpuzzle.viewmodel
 
 import android.app.Application
 import android.content.Context
