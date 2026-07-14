@@ -1,4 +1,4 @@
-# 🧩 Eight Puzzle
+# Eight Puzzle
 
 A modern Android sliding puzzle game built with **Kotlin**, **Jetpack Compose**, and **Material 3**.
 
